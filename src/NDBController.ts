@@ -14,7 +14,9 @@ export class NDBController<T> {
         this.repository = new NDBRepository<T>({db:options.db, model:options.model});
     }
 
-    addRoutes(app: Express, ) {
+    addRoutes(anApp: Express | Router, ) {
+        const app = anApp as Express;
+
         app.get("/", ((req, res) => {
             const search = req.query.search as string;
             const limit = typeof req.query.limit !== "undefined" ? Number(req.query.limit) : undefined;
