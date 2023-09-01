@@ -6,8 +6,10 @@ import {INDBModel, NDBModel} from "./NDBModel";
 export class NDBController<T> {
     private repository: NDBRepository<T>;
     private modelConstructor: INDBModel;
+    private readOnly: boolean;
 
-    constructor(options: {db: Database, model: INDBModel}) {
+    constructor(options: {db: Database, model: INDBModel, readOnly?: boolean}) {
+        this.readOnly = options.readOnly;
         this.modelConstructor = options.model;
         this.repository = new NDBRepository<T>({db:options.db, model:options.model});
     }
@@ -75,68 +77,70 @@ export class NDBController<T> {
             })
         }))
 
-        app.delete("/:id", ((req, res) => {
-            const id = Number(req.params.id);
-            this.repository.delete(id).then((success) => {
-                res.status(200);
-                res.json(success)
-            }, (code: number)=>{
-                res.status(code);
-                res.json([])
-            })
-        }))
+        if (!this.readOnly) {
+            app.delete("/:id", ((req, res) => {
+                const id = Number(req.params.id);
+                this.repository.delete(id).then((success) => {
+                    res.status(200);
+                    res.json(success)
+                }, (code: number)=>{
+                    res.status(code);
+                    res.json([])
+                })
+            }))
 
-        app.post("", ((req, res) => {
-            const entry = new this.modelConstructor();
-            const staticMethods = this.modelConstructor;
+            app.post("", ((req, res) => {
+                const entry = new this.modelConstructor();
+                const staticMethods = this.modelConstructor;
 
-            const keys = staticMethods.getKeysWithoutIndex();
-            for (const key of keys) {
-                entry[key] = req.body[key];
-            }
-            this.repository.add(entry).then((id: number)=>{
-                res.status(200);
-                res.json(id);
-            }).catch((code)=>{
-                res.status(code);
-                res.json([]);
-            });
-        }))
+                const keys = staticMethods.getKeysWithoutIndex();
+                for (const key of keys) {
+                    entry[key] = req.body[key];
+                }
+                this.repository.add(entry).then((id: number)=>{
+                    res.status(200);
+                    res.json(id);
+                }).catch((code)=>{
+                    res.status(code);
+                    res.json([]);
+                });
+            }))
 
-        app.put("/:id", ((req, res) => {
-            const id = Number(req.params.id);
-            const entry = new this.modelConstructor();
-            const staticMethods = this.modelConstructor;
-            const indexKey = staticMethods.getIndexKey();
-            entry[indexKey] = id;
-            for (const key of staticMethods.getKeysWithoutIndex()) {
-                entry[key] = req.body[key];
-            }
-            this.repository.replace(entry as T).then((id: number|string)=>{
-                res.status(200);
-                res.json(id);
-            }, (code)=>{
-                res.status(code);
-                res.json([]);
-            } );
-        }))
+            app.put("/:id", ((req, res) => {
+                const id = Number(req.params.id);
+                const entry = new this.modelConstructor();
+                const staticMethods = this.modelConstructor;
+                const indexKey = staticMethods.getIndexKey();
+                entry[indexKey] = id;
+                for (const key of staticMethods.getKeysWithoutIndex()) {
+                    entry[key] = req.body[key];
+                }
+                this.repository.replace(entry as T).then((id: number|string)=>{
+                    res.status(200);
+                    res.json(id);
+                }, (code)=>{
+                    res.status(code);
+                    res.json([]);
+                } );
+            }))
 
-        app.patch("/:id", ((req, res) => {
-            const id = Number(req.params.id);
-            const entry = new this.modelConstructor();
-            const staticMethods = this.modelConstructor;
-            const indexKey = staticMethods.getIndexKey();
-            entry[indexKey] = id;
-            for (const key of staticMethods.getKeysWithoutIndex()) {
-                entry[key] = req.body[key];
-            }
-            this.repository.update(entry as T).then((id: number|string)=>{
-                res.status(200);
-                res.json(id);
-            }).catch((code)=>{
-                res.status(code);
-                res.json([]);
-            });
-        }))
+            app.patch("/:id", ((req, res) => {
+                const id = Number(req.params.id);
+                const entry = new this.modelConstructor();
+                const staticMethods = this.modelConstructor;
+                const indexKey = staticMethods.getIndexKey();
+                entry[indexKey] = id;
+                for (const key of staticMethods.getKeysWithoutIndex()) {
+                    entry[key] = req.body[key];
+                }
+                this.repository.update(entry as T).then((id: number|string)=>{
+                    res.status(200);
+                    res.json(id);
+                }).catch((code)=>{
+                    res.status(code);
+                    res.json([]);
+                });
+            }))
+        }
     }
 }

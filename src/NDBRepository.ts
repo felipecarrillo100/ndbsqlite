@@ -7,7 +7,7 @@ export class NDBRepository<T> {
     private db: Database;
     private modelConstructor: INDBModel;
 
-    constructor(options: {db: Database, model: INDBModel}) {
+    constructor(options: {db: Database, model: INDBModel }) {
         this.db = options.db;
         this.modelConstructor = options.model;
         this.init();
@@ -205,7 +205,7 @@ export class NDBRepository<T> {
 
     public replace(newRow: T) {
         const staticMethods = this.modelConstructor;
-        return new Promise<number|string>((resolve, reject)=>{
+        return new Promise<number>((resolve, reject)=>{
             const indexKey = staticMethods.getIndexKey();
             if (typeof newRow[indexKey] !== "undefined") {
                 const values = staticMethods.getKeysWithoutIndex().map(k=>newRow[k]);
@@ -232,7 +232,7 @@ export class NDBRepository<T> {
 
     public update(newRow: T) {
         const staticMethods = this.modelConstructor;
-        return new Promise<number|string>((resolve, reject)=> {
+        return new Promise<number>((resolve, reject)=> {
             const indexKey = staticMethods.getIndexKey();
             if (typeof newRow[indexKey] !== "undefined") {
                 this.get(newRow[indexKey] as number).then((oldRow) => {
