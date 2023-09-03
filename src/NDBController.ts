@@ -14,6 +14,9 @@ export class NDBController<T> {
         this.repository = new NDBRepository<T>({db:options.db, model:options.model});
     }
 
+    getRepository() {
+        return this.repository;
+    }
     addRoutes(anApp: Express | Router, ) {
         const app = anApp as Express;
 
