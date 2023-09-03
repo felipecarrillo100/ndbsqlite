@@ -39,11 +39,60 @@ export class NDBModel {
         return `SELECT * FROM "${TableName}" WHERE "${name}" LIKE ?`
     }
 
+    static sqlSelectByTextAndMatch(matches: string[]) {
+        const TableName = this.TableName;
+        const name = this.getTextSearchKey();
+        const sql = `SELECT * FROM "${TableName}" WHERE "${name}" LIKE ?`
+        if (matches.length===0) return sql;
+        const queries = [];
+        const validKeys = this.getKeysWithoutIndex();
+        for (const key of matches) {
+            if (validKeys.includes(key)) {
+                queries.push(`"${key}"=?`);
+            }
+        }
+        const matchQuery = queries.join(" AND ");
+        return `${sql} AND ${matchQuery}`;
+    }
+
     static sqlSelectByGroupAndText() {
         const sql = this.sqlSelectByText();
         const group = this.getGroupName();
         return `${sql} AND "${group}"=?`
     }
+
+    static sqlCleanQuery(match?: {[key:string]: any}) {
+        if (typeof match === "undefined") {
+            return {keys: [], values: []}
+        }
+        const cleanQuery:string[] = [];
+        const cleanValues:any[] = [];
+        const validKeys = this.getKeysWithoutIndex();
+        for (const key in match) {
+            if (validKeys.includes(key)) {
+                cleanQuery.push(key);
+                cleanValues.push(match[key]);
+            }
+        };
+        return {
+            keys: cleanQuery,
+            values: cleanValues
+        }
+    }
+    static sqlSelectByGroupAndTextAndMatch(matches: string[]) {
+        const sql = this.sqlSelectByText();
+        const group = this.getGroupName();
+        const queries = [`"${group}"=?`];
+        const validKeys = this.getKeysWithoutIndex();
+        for (const key of matches) {
+            if (validKeys.includes(key)) {
+                queries.push(`"${key}"=?`);
+            }
+        }
+        const matchQuery = queries.join(" AND ");
+        return `${sql} AND ${matchQuery}`;
+    }
+
     static getPaginationSort(sortBy?: string, asc?: boolean) {
         const Paginate = " LIMIT ?, ?"
         if (!sortBy) return Paginate;

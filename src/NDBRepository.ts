@@ -77,6 +77,7 @@ export class NDBRepository<T> {
             const searchText = options.search ? `%${options.search}%` : "%%";
             const sortBy = options.sortBy ? options.sortBy : staticMethods.getIndexKey();
             const asc = options.asc;
+            const query = options.query;
             // sqlCountGroup
             const sqlCountAll = staticMethods.sqlCountAll();
             this.db.get(sqlCountAll, [], (err, total: any) => {
@@ -92,9 +93,10 @@ export class NDBRepository<T> {
                         reject(400);
                         return;
                     }
-                    const sqlSelectByGroupAndText = staticMethods.sqlSelectByGroupAndText();
+                    const cleanQuery = staticMethods.sqlCleanQuery(query);
+                    const sqlSelectByGroupAndText = staticMethods.sqlSelectByGroupAndTextAndMatch(cleanQuery.keys);
                     const sqlCountMatches = staticMethods.SqlCountSelectQuery(sqlSelectByGroupAndText);
-                    this.db.get(sqlCountMatches, [searchText, group], (err, matches: any) => {
+                    this.db.get(sqlCountMatches, [searchText, group, ...cleanQuery.values], (err, matches: any) => {
                         if (err) {
                             console.log(err);
                             reject(400);
@@ -102,7 +104,7 @@ export class NDBRepository<T> {
                         }
                         const pagination = staticMethods.getPaginationSort(sortBy, asc);
                         const sqlQuery = sqlSelectByGroupAndText + pagination;
-                        this.db.all(sqlQuery, [searchText, group, offset, limit], (err, rows) => {
+                        this.db.all(sqlQuery, [searchText, group, ...cleanQuery.values, offset, limit], (err, rows) => {
                             if (err) {
                                 console.log(err);
                                 reject(400);
@@ -136,6 +138,7 @@ export class NDBRepository<T> {
             const searchText = options.search ? `%${options.search}%` : "%%";
             const sortBy = options.sortBy ? options.sortBy : staticMethods.getIndexKey();
             const asc = options.asc;
+            const query = options.query;
             const sqlCountAll = staticMethods.sqlCountAll();
             this.db.get(sqlCountAll, [], (err, total: any) => {
                 if (err) {
@@ -143,9 +146,10 @@ export class NDBRepository<T> {
                     reject(400);
                     return;
                 }
-                const sqlSelectByText = staticMethods.sqlSelectByText();
+                const cleanQuery = staticMethods.sqlCleanQuery(query);
+                const sqlSelectByText = staticMethods.sqlSelectByTextAndMatch(cleanQuery.keys);
                 const sqlCountMatches = staticMethods.SqlCountSelectQuery(sqlSelectByText);
-                this.db.get(sqlCountMatches, [searchText], (err, matches: any) => {
+                this.db.get(sqlCountMatches, [searchText, ...cleanQuery.values], (err, matches: any) => {
                     if (err) {
                         console.log(err);
                         reject(400);
@@ -153,7 +157,7 @@ export class NDBRepository<T> {
                     }
                     const pagination = staticMethods.getPaginationSort(sortBy, asc);
                     const sqlQuery = sqlSelectByText + pagination;
-                    this.db.all(sqlQuery, [searchText, offset, limit], (err, rows) => {
+                    this.db.all(sqlQuery, [searchText, ...cleanQuery.values, offset, limit], (err, rows) => {
                         if (err) {
                             console.log(err);
                             reject(400);

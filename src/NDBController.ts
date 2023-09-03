@@ -23,7 +23,8 @@ export class NDBController<T> {
             const offset = typeof req.query.offset !== "undefined" ? Number(req.query.offset) : undefined;
             const sortBy = req.query.sortBy as string;
             const asc = typeof req.query.sort === "undefined" ? true : req.query.sort.toString().toUpperCase() !== "DESC";
-            this.repository.queryLike({search, limit, offset, sortBy, asc}).then((queryResult) => {
+            const query = req.query.query as {[key:string]: any};
+            this.repository.queryLike({search, limit, offset, sortBy, asc, query}).then((queryResult) => {
                 const output = {
                     total: queryResult.total,
                     matches: queryResult.matches,
@@ -43,7 +44,8 @@ export class NDBController<T> {
             const offset = typeof req.query.offset !== "undefined" ? Number(req.query.offset) : undefined;
             const sortBy = req.query.sortBy as string;
             const asc = typeof req.query.sort === "undefined" ? true : req.query.sort.toString().toUpperCase() !== "DESC";
-            this.repository.queryLikeGroup({group, search, limit, offset, sortBy, asc}).then((queryResult) => {
+            const query = req.query.query as {[key:string]: any};
+            this.repository.queryLikeGroup({group, search, limit, offset, sortBy, asc, query}).then((queryResult) => {
                 const output = {
                     total: queryResult.total,
                     group: queryResult.group,

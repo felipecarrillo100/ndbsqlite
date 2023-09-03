@@ -8,17 +8,26 @@ import Path from "path";
 
 describe('NDBRepository ',  () => {
     class TestModel extends NDBModel {
+        get g(): number {
+            return this._g;
+        }
+
+        set g(value: number) {
+            this._g = value;
+        }
         static TableName = "TestModel";
 
         private _id: number;
         private _a: string;
         private _b: string;
+        private _g: number;
 
-        constructor(options?:{id?: number, a: string, b: string}) {
+        constructor(options?:{id?: number, a: string, b: string, g: number}) {
             super();
             this._id = options?.id;
             this._a = options?.a;
             this._b = options?.b;
+            this._g = options?.g
         }
 
         get id(): number {
@@ -46,8 +55,17 @@ describe('NDBRepository ',  () => {
         }
 
         static getKeys() {
-            return ["id", "a", "b"];
+            return ["id", "a", "b", "g"];
         }
+
+        static getTextSearchKey() {
+            return "a";
+        }
+
+        static getGroupName() {
+            return "g";
+        }
+
 
     }
 
@@ -82,8 +100,8 @@ describe('NDBRepository ',  () => {
         const db = await ndbSqlite.init("./sql/dbschema.sql");
         const repository = new NDBRepository<TestModel>({db, model: TestModel});
 
-        const inputs = {a:"abc", b:"def"};
-        const index = await repository.add(new TestModel({a:"abc", b:"def"}));
+        const inputs = {a:"abc", b:"def", g:1};
+        const index = await repository.add(new TestModel(inputs));
         const entry=await repository.get(index);
         expect(entry.asJson()).toStrictEqual({id: index, ...inputs });
         db.close();
@@ -98,13 +116,23 @@ describe('NDBRepository ',  () => {
         db.close();
     });
 
+    it('NDBSqLite queryLike Group', async () => {
+        const db = await ndbSqlite.init("./sql/dbschema.sql");
+        const repository = new NDBRepository<TestModel>({db, model: TestModel});
+        const inputs1 = {a:"abc", b:"exact match",g:1};
+        const index = await repository.add(new TestModel(inputs1));
+        const matches = await repository.queryLikeGroup({group:1, query: {b:"exact match"}});
+        expect(matches.items[0].b).toBe(inputs1.b);
+        db.close();
+    });
+
     it('NDBSqLite post put', async () => {
         const db = await ndbSqlite.init("./sql/dbschema.sql");
         const repository = new NDBRepository<TestModel>({db, model: TestModel});
 
-        const inputs1 = {a:"abc", b:"before"};
+        const inputs1 = {a:"abc", b:"before", g:2};
         const index = await repository.add(new TestModel(inputs1));
-        const inputs2 = {a:"xyz", b:"after"}
+        const inputs2 = {a:"xyz", b:"after", g: 2}
         const index2 = await repository.replace(new TestModel({id: index, ...inputs2}));
         const entry=await repository.get(index2);
         expect(entry.asJson()).toStrictEqual({id: index, ...inputs2 });
@@ -115,10 +143,10 @@ describe('NDBRepository ',  () => {
         const db = await ndbSqlite.init("./sql/dbschema.sql");
         const repository = new NDBRepository<TestModel>({db, model: TestModel});
 
-        const inputs1 = {a:"abc", b:"before"};
+        const inputs1 = {a:"abc", b:"before", g: 3};
         const index = await repository.add(new TestModel(inputs1));
         const inputs2 = { b:"after"}
-        const index2 = await repository.update(new TestModel({id: index, a: undefined,... inputs2}));
+        const index2 = await repository.update(new TestModel({id: index, a: undefined,g:undefined, ... inputs2}));
         const entry=await repository.get(index2);
         expect(entry.asJson()).toStrictEqual({id: index, ...inputs1, ...inputs2});
         db.close();

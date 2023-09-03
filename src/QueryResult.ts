@@ -12,4 +12,5 @@ export interface QueryInputs {
     offset?: number;
     sortBy?: string;
     asc?: boolean;
+    query?: {[key:string]: any};
 }
