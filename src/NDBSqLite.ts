@@ -33,8 +33,7 @@ export class NDBSqLite {
                         this.loadInitialSchema(pathToSchema).then(()=>{
                             resolve(this.db);
                         }, (err)=> {
-                            console.error(err.message);
-                            reject();
+                            reject(err);
                         })
                     } else {
                         resolve(this.db);
